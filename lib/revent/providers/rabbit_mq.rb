@@ -4,11 +4,15 @@ require 'bunny'
 module Revent
   module Providers
     class RabbitMQ
-      attr_reader :conn, :channel, :queue
+      attr_reader :conn, :channel, :queue, :params
 
-      def initialize(connect, channel)
-        @connect = connect
-        @channel = channel
+      def initialize
+        @params = {
+          hostname: Revent.config.host,
+          username: Revent.config.username,
+          password: Revent.config.password
+        }
+
         @queue = channel.queue('revent_queue', durable: true)
       end
 
@@ -18,7 +22,15 @@ module Revent
       end
 
       def self.emit(event)
-        new(connection, channel).publish(event)
+        new.publish(event)
+      end
+
+      def conn
+        @conn ||= initialize_client
+      end
+
+      def channel
+        @channel ||= conn.create_channel
       end
 
       private
@@ -35,20 +47,18 @@ module Revent
         }.to_json
       end
 
-      def self.connection
-        params = {
-          hostname: Revent.config.host,
-          username: Revent.config.username,
-          password: Revent.config.password
-        }
+      def initialize_client
+        env = ENV['RAILS_ENV'] || ENV['RACK_ENV']
+        
+        if env == 'test'
+          require 'bunny-mock'
 
-        @conn ||= Bunny.new(params).tap do |c|
-          c.start
+          BunnyMock.new.start
+        else
+          Bunny.new(params).tap do |c|
+            c.start
+          end
         end
-      end
-
-      def self.channel
-        @channel ||= connection.create_channel
       end
     end
   end

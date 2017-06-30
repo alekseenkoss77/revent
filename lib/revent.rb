@@ -1,6 +1,7 @@
 require "revent/version"
 require "revent/config"
 require 'active_support'
+require 'active_support/core_ext'
 
 require 'revent/providers/rabbit_mq'
 
@@ -18,8 +19,10 @@ module Revent
   end
 
   def self.subscribe(event_name, callback = nil)
-    ActiveSupport::Notifications.subscribe(event_name) do |*args|
-      event = ActiveSupport::Notifications::Event.new(*args)
+    ActiveSupport::Notifications.subscribe(event_name) do |name, start, ending, transaction_id, payload|
+      next unless payload.present?
+      
+      event = ActiveSupport::Notifications::Event.new(name, start, ending, transaction_id, payload)
       
       if block_given?
         yield(event)
