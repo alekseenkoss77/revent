@@ -31,12 +31,21 @@ module Revent
       end
       
       # Emit event to external provider if exists
-      event_provider.emit(event) if event_provider.present?
+      event_provider.publish(event) if event_provider.present?
     end
   end
 
   def self.event_provider
+    @event_provider ||= init_provider
+  end
+
+  def self.init_provider
     return unless config.provider.present?
-    "Revent::Providers::#{config.provider}".safe_constantize
+    klass = "Revent::Providers::#{config.provider}".safe_constantize
+    klass ? klass.new : nil
+  end
+
+  def self.cleanup
+    @event_provider = nil
   end
 end

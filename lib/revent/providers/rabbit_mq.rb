@@ -21,10 +21,6 @@ module Revent
         queue.publish(transform_event(event), persistent: true)
       end
 
-      def self.emit(event)
-        new.publish(event)
-      end
-
       def conn
         @conn ||= initialize_client
       end
