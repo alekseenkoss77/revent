@@ -28,10 +28,10 @@ module Revent
         yield(event)
       elsif callback.present? && callback.is_a?(Proc)
         callback.call(event)
+      else
+        # Emit event to external provider if exists
+        event_provider.publish(event) if event_provider.present?
       end
-      
-      # Emit event to external provider if exists
-      event_provider.publish(event) if event_provider.present?
     end
   end
 
